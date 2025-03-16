@@ -1,0 +1,43 @@
+services:
+  backend:
+    build: ./src
+    env_file:
+      - ./src/.env
+    volumes:
+      - ./src/:/app/
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  postgres:
+    image: postgres:17.3
+    env_file: ./src/.env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7.4.1-bookworm
+    volumes:
+      - redis_data:/redis_data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+    ports:
+      - "6379:6379"
+  tests:
+    build: ./src
+    env_file:
+      - ./src/.env
+    entrypoint: >
+      sh -c "pytest -x"
+    depends_on:
+      - backend
+volumes:
+  pg_data:
+  redis_data:
