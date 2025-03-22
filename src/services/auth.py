@@ -39,7 +39,7 @@ class AuthService(AbstractService):
     @staticmethod
     async def get_nested_key(login_history: LoginHistory) -> str:
         """Формирование ключа вложенной хеш структуры."""
-        return login_history.user_agent + login_history.host
+        return login_history.user_agent + login_history.host + str(login_history.user_id)
 
     async def hget_from_cache(self, user_id: str, nested_key: str) -> str:
         """Получение значений из хеш структуры."""
@@ -189,6 +189,11 @@ def get_auth_service(db: AsyncSession = Depends(get_db), cache: Redis = Depends(
 class SocialService(AbstractService):
     """Сервис авторизации через сторонние приложения."""
 
+    def __init__(self, db: AsyncSession, cache: Redis) -> None:
+        """Инициализация сервиса."""
+        self.auth_service = get_auth_service(db, cache)
+        super().__init__(db, cache)
+
     @staticmethod
     async def get_link() -> SocialAuthorizationLink:
         """Линк авторизации в яндексе."""
@@ -249,8 +254,26 @@ class SocialService(AbstractService):
             logger.info("User created from yandex")
             logger.info(user)
             role_ids = [role.id]
+        login_history = await DBLoginHistory.create(
+            db=self.db,
+            obj_in={
+                "user_id": user.id,
+                "user_agent": "yandex",
+                "host": "https://ya.ru",
+            },
+        )
+        nested_key = await self.auth_service.get_nested_key(login_history)
         access_token = create_access_token(subject=user.id, role_ids=role_ids)
         refresh_token = create_refresh_token(subject=user.id)
+        await self.auth_service.hset_to_cache(
+            user_id=str(user.id),
+            nested_key=nested_key,
+            refresh_token=refresh_token,
+            nx=True,
+            xx=False,
+            gt=False,
+            lt=False,
+        )
         return {"access_token": access_token, "refresh_token": refresh_token}
 
 
