@@ -12,6 +12,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  pumpkin:
+    build: ./pumpkin
+    env_file:
+      - ./pumpkin/.env
+    volumes:
+      - ./pumpkin/:/app/
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
   postgres:
     image: postgres:17.3
     env_file: ./src/.env
