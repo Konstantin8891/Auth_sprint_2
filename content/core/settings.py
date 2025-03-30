@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     elastic_port: int
     elastic_schema: str
     cache_expire_in_seconds: int
+    rabbitmq_url: str
+    algorithm: str
+    secret_key: str
 
     model_config = SettingsConfigDict(
         env_file=(".env",),

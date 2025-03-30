@@ -11,12 +11,26 @@ from fastapi.responses import JSONResponse, ORJSONResponse
 from redis.asyncio import Redis
 
 from api.urls import router
+from broker.rabbitmq import rabbit_router
 from core.logger import LOGGING
 from core.settings import settings
 from db import elastic, redis
 
+
+@rabbit_router.subscriber("test")
+async def hello(msg: str):
+    """Тестовая ручка."""
+    return {"response": "Hello, Rabbit!"}
+
+
+@rabbit_router.after_startup
+async def test(app: FastAPI):
+    """Приветственное сообщение."""
+    await rabbit_router.broker.publish("Hello!", "test")
+
+
 dictConfig(LOGGING)
-logger = logging.getLogger("mycoolapp")
+logger = logging.getLogger("content")
 
 
 # On events deprecated use lifespan instead
@@ -44,6 +58,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(rabbit_router, prefix="/amqp")
 app.include_router(router, prefix="/api")
 
 

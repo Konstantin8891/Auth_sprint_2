@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     yandex_oauth_profile: str
     yandex_client_id: str
     yandex_client_secret: str
+    rabbitmq_url: str
 
     model_config = SettingsConfigDict(
         env_file=(".env"),

@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Filmwork",
                 "verbose_name_plural": "Filmworks",
-                "db_table": 'content"."film_work',
+                "db_table": "content.film_work",
             },
         ),
         migrations.CreateModel(
@@ -85,7 +85,8 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Genre",
                 "verbose_name_plural": "Genres",
-                "db_table": 'content"."genre',
+                # "db_table": 'content"."genre',
+                "db_table": "content.genre",
             },
         ),
         migrations.CreateModel(
@@ -110,7 +111,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Person",
                 "verbose_name_plural": "Persons",
-                "db_table": 'content"."person',
+                "db_table": "content.person",
             },
         ),
         migrations.CreateModel(
@@ -141,7 +142,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Genre filmwork",
                 "verbose_name_plural": "Genre filmworks",
-                "db_table": 'content"."genre_film_work',
+                "db_table": "content.genre_film_work",
             },
         ),
         migrations.AddField(
@@ -197,7 +198,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Person filmwork",
                 "verbose_name_plural": "person filmworks",
-                "db_table": 'content"."person_film_work',
+                "db_table": "content.person_film_work",
             },
         ),
         migrations.AddField(

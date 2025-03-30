@@ -7,7 +7,9 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 
+from amqp.routers import rabbit_master_router  # noqa
 from api.urls import router
+from broker.rabbitmq import rabbit_router
 from core.config import settings
 from core.logger import LOGGING
 
@@ -16,6 +18,18 @@ from core.logger import LOGGING
 # from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 # from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 # from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+
+
+@rabbit_router.subscriber("test")
+async def hello(msg: str):
+    """Тестовая ручка."""
+    return {"response": "Hello, Rabbit!"}
+
+
+@rabbit_router.after_startup
+async def test(app: FastAPI):
+    """После старта кролика."""
+    await rabbit_router.broker.publish("Hello!", "test")
 
 
 dictConfig(LOGGING)
@@ -73,5 +87,6 @@ app = FastAPI(
 #         return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'detail': 'X-Request-Id is required'})
 #     return response
 
+app.include_router(rabbit_master_router, prefix="/amqp")
 app.include_router(router, prefix="/api")
 add_pagination(app)

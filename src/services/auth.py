@@ -203,8 +203,6 @@ class SocialService(AbstractService):
 
     async def get_tokens(self, code: str):
         """Возвращает токены по коду яндекса."""
-        print("code")
-        print(code)
         params = {
             "grant_type": "authorization_code",
             "code": code,

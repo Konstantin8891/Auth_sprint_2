@@ -14,6 +14,7 @@ from redis.asyncio import Redis
 
 from core.settings import settings
 from db.elastic import ElasticCRUD
+from services.users import UserService
 
 
 class AbstractService(ABC):
@@ -55,6 +56,7 @@ class RedisElasticService(AbstractService):
         self.cache = cache
         self.db = ElasticCRUD(db)
         self.cache_expire_in_seconds = settings.cache_expire_in_seconds
+        self.user_service = UserService()
 
     async def _get_from_cache(self, key: Union[uuid.UUID, str]) -> bytes | None:
         """Получить объект по id из кэша."""

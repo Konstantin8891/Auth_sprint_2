@@ -1,5 +1,6 @@
 """Сервисы пользователей."""
 import operator
+import uuid
 from functools import lru_cache
 from http import HTTPStatus
 
@@ -15,6 +16,7 @@ from crud.sections import DBSection
 from crud.users import DBUser
 from db.postgres import get_db
 from db.redis import get_redis
+from exceptions.users import UserNotFound
 from models.entity import LoginHistory, Permission, Role, Section, User
 from schemas.entity import PermissionUserSchema, RoleUserPatchSchema, SectionViewSchema, UserCreate, UserPatchSchema
 from services.base import AbstractService
@@ -98,6 +100,15 @@ class UserService(AbstractService):
             conditions=[(LoginHistory.user_id, user.id, operator.eq)],
             order=LoginHistory.created_at,
         )
+
+    async def get_user_by_id(self, user_id: uuid) -> User:
+        """Получение пользователя по id прежде всего через кролика."""
+        user = await DBUser.get_by_field_name(
+            field_name=User.id, field_value=user_id, db=self.db, _select=User, selection_load_options=[(User.roles,)]
+        )
+        if not user:
+            raise UserNotFound(user_id=user_id)
+        return user
 
 
 @lru_cache()

@@ -8,9 +8,11 @@ from typing import Dict, List, Tuple
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch_dsl import Q
-from fastapi import Depends
+from fastapi import Depends, Request
+from faststream.rabbit import RabbitBroker
 from redis.asyncio import Redis
 
+from broker.rabbitmq import exch
 from db.elastic import get_elastic
 from db.redis import get_redis
 from models.movies import FilmWork
@@ -76,7 +78,8 @@ class FilmService(RedisElasticService):
         schemas_json = []
         for el in result["hits"]["hits"]:
             film = FilmWorkShortSchema(
-                uuid=el["_source"]["id"],
+                # uuid=el["_id"],
+                uuid=el["_source"]["uuid"],
                 title=el["_source"]["title"],
                 imdb_rating=el["_source"]["imdb_rating"],
             )
@@ -86,11 +89,30 @@ class FilmService(RedisElasticService):
 
     async def get_films(
         self,
+        request: Request,
         sort_params: SortParams,
         page_params: PaginationParams,
         filter_params: FilmWorkFilterParams,
+        broker: RabbitBroker,
     ) -> List[FilmWorkShortSchema]:
         """Получить список популярных фильмов."""
+        user_id = await self.user_service.parse_token(request)
+        try:
+            user = await broker.publish(user_id, "me", rpc=True, rpc_timeout=5, raise_timeout=True, exchange=exch)
+            if isinstance(user, dict) and user.get("status_code") and user["status_code"] != 404:
+                user = await broker.publish(
+                    user_id, "me_pumpkin", rpc=True, rpc_timeout=5, raise_timeout=True, exchange=exch
+                )
+        except TimeoutError:
+            user = await broker.publish(
+                user_id, "me_pumpkin", rpc=True, rpc_timeout=5, raise_timeout=True, exchange=exch
+            )
+        if isinstance(user, dict) and user.get("status_code") and user["status_code"] != 404:
+            user = await broker.publish(
+                user_id, "me_pumpkin", rpc=True, rpc_timeout=5, raise_timeout=True, exchange=exch
+            )
+        logger.info("user")
+        logger.info(user)
         key = f"get_films-page_size-{page_params.page_size}_page-{page_params.page}"
         if filter_params.genre_id:
             key += f"genre_id={filter_params.genre_id}"
