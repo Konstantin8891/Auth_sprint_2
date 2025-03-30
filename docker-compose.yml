@@ -1,5 +1,5 @@
 services:
-  backend:
+  auth:
     build: ./src
     env_file:
       - ./src/.env
@@ -12,7 +12,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-  pumpkin:
+      rabbitmq:
+        condition: service_healthy
+  auth_pumpkin:
     build: ./pumpkin
     env_file:
       - ./pumpkin/.env
@@ -24,6 +26,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
   postgres:
     image: postgres:17.3
@@ -50,7 +54,89 @@ services:
     entrypoint: >
       sh -c "pytest -x"
     depends_on:
-      - backend
+      - jaeger-all-in-one
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:1.67.0
+    ports:
+      - "16686:16686"
+#      - "14268:14628"
+#      - "14250:14250"
+      - "6831:6831"
+    depends_on:
+      - auth
+  content:
+    build: ./content
+    env_file:
+      - ./content/.env
+    volumes:
+      - ./content/:/app/
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test:
+         [
+           "CMD-SHELL",
+           "curl GET http://auth:8002/api/healthcheck",
+         ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      elastic:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  elastic:
+    image: elasticsearch:8.15.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms300m -Xmx300m"
+    healthcheck:
+      test:
+         [
+           "CMD-SHELL",
+           "curl -s http://localhost:9200",
+         ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    depends_on:
+      - redis
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+  django:
+    build: ./movies_admin
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./movies_admin/:/app/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 1s
+      timeout: 5s
+      retries: 1000
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - "rabbitmq_data:/bitnami"
+    networks:
+      - default
 volumes:
   pg_data:
   redis_data:
+  rabbitmq_data:
+  es_data:

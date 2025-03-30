@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 
+from amqp.routers import rabbit_master_router
 from api.urls import router
 from core.config import settings
 from core.logger import LOGGING
@@ -22,4 +23,5 @@ app = FastAPI(
 )
 
 app.include_router(router, prefix="/api")
+app.include_router(rabbit_master_router, prefix="/amqp")
 add_pagination(app)

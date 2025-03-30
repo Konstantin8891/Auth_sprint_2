@@ -2,4 +2,6 @@
 max-line-length = 120
 exclude =
     .venv/,
-    src/alembic/*
+    src/alembic/*,
+    movies_admin/movies/migrations/*,
+    movies_admin/movies/apps.py
