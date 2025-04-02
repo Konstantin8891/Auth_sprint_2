@@ -59,7 +59,7 @@ app = FastAPI(
 )
 
 app.include_router(rabbit_router, prefix="/amqp")
-app.include_router(router, prefix="/api")
+app.include_router(router, prefix="/api/content")
 
 
 @app.exception_handler(Exception)
