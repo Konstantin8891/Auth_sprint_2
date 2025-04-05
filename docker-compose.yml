@@ -1,6 +1,7 @@
 services:
   nginx:
-    image: nginx:1.27.2
+    build: ./
+#    image: nginx:1.27.2
     volumes:
 #      - static-backend:/var/www/static
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -65,17 +66,34 @@ services:
       - ./src/.env
     entrypoint: >
       sh -c "pytest -x"
-    depends_on:
-      - jaeger-all-in-one
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:1.67.0
-    ports:
-      - "16686:16686"
-#      - "14268:14628"
-#      - "14250:14250"
-      - "6831:6831"
-    depends_on:
-      - auth
+#    depends_on:
+#      - jaeger-all-in-one
+  all-in-one:
+      environment:
+          - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+          - COLLECTOR_OTLP_ENABLED=true
+      ports:
+          - 6831:6831/udp
+          - 6832:6832/udp
+          - 5778:5778
+          - 16686:16686
+          - 4317:4317
+          - 4318:4318
+          - 4319:4319
+          - 14250:14250
+          - 14268:14268
+          - 14269:14269
+          - 9411:9411
+      image: jaegertracing/all-in-one:1.44.0
+#  jaeger-all-in-one:
+#    image: jaegertracing/all-in-one:1.67.0
+#    ports:
+#      - "16686:16686"
+##      - "14268:14628"
+##      - "14250:14250"
+#      - "6831:6831"
+#    depends_on:
+#      - auth
   content:
     build: ./content
     env_file:
@@ -145,8 +163,6 @@ services:
       RABBITMQ_DEFAULT_PASS: admin
     volumes:
       - "rabbitmq_data:/bitnami"
-    networks:
-      - default
 volumes:
   pg_data:
   redis_data:

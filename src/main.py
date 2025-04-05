@@ -71,7 +71,7 @@ def configure_tracer() -> None:
     trace.get_tracer_provider().add_span_processor(
         BatchSpanProcessor(
             JaegerExporter(
-                agent_host_name="jaeger-all-in-one",
+                agent_host_name="all-in-one",
                 agent_port=6831,
             )
         )
@@ -100,6 +100,11 @@ async def before_request(request: Request, call_next):
     if not request_id:
         return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "X-Request-Id is required"})
     tracer = trace.get_tracer(__name__)
+    # with tracer.start_span('TestSpan') as span:
+    # span.log_kv({'event': 'test message', 'life': 42})
+    #
+    # with tracer.start_span('ChildSpan', child_of=span) as child_span:
+    #     child_span.log_kv({'event': 'down below'})
     span = tracer.start_span()
     span.set_attribute("http.request_id", request_id)
     span.end()
