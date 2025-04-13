@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     yandex_client_id: str
     yandex_client_secret: str
     rabbitmq_url: str
+    request_limit_per_minute: int
+    exp_rate_limiter: int
 
     model_config = SettingsConfigDict(
         env_file=(".env"),
