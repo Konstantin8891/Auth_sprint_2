@@ -20,16 +20,28 @@ async def test_create_section(payload_data, expected_answer):
     """Тест создания раздела."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/sections", json=payload_data)
+    response = client.post(
+        "/api/auth/v1/sections",
+        json=payload_data,
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9b"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9b"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.post("/api/v1/sections", headers={"Authorization": f"Bearer {access}"}, json=payload_data)
+    response = client.post(
+        "/api/auth/v1/sections",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9b"},
+        json=payload_data,
+    )
 
     data = response.json()
 
@@ -42,16 +54,23 @@ async def test_get_sections():
     """Получение разделов."""
     client = TestClient(app)
 
-    response = client.get("/api/v1/sections")
+    response = client.get("/api/auth/v1/sections", headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9b"})
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9b"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.get("/api/v1/sections", headers={"Authorization": f"Bearer {access}"})
+    response = client.get(
+        "/api/auth/v1/sections",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9b"},
+    )
     data = response.json()
 
     assert response.status_code == HTTPStatus.OK

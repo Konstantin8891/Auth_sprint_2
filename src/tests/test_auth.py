@@ -40,7 +40,9 @@ async def test_signup(payload_data, expected_answer):
     """Регистрация пользователя."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/auth/signup", json=payload_data)
+    response = client.post(
+        "/api/auth/v1/auth/signup", json=payload_data, headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"}
+    )
     data = response.json()
 
     assert response.status_code == expected_answer.get("status")
@@ -64,7 +66,9 @@ async def test_login(payload_data, expected_answer):
     """Логин."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/auth/login", json=payload_data)
+    response = client.post(
+        "/api/auth/v1/auth/login", json=payload_data, headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"}
+    )
     data = response.json()
 
     assert response.status_code == expected_answer.get("status")
@@ -77,7 +81,11 @@ async def test_refresh():
     """Рефреш."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     wrong_refresh = (
@@ -87,11 +95,19 @@ async def test_refresh():
 
     refresh = data.get("refresh_token")
 
-    response = client.post("/api/v1/auth/refresh", json={"refresh_token": wrong_refresh})
+    response = client.post(
+        "/api/auth/v1/auth/refresh",
+        json={"refresh_token": wrong_refresh},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh})
+    response = client.post(
+        "/api/auth/v1/auth/refresh",
+        json={"refresh_token": refresh},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.OK
 
@@ -105,23 +121,41 @@ async def test_logout():
     """Логаут."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     refresh = data.get("refresh_token")
 
-    response = client.delete("/api/v1/auth/logout", headers={"Authorization": f"Bearer {data.get('access_token')}"})
+    response = client.delete(
+        "/api/auth/v1/auth/logout",
+        headers={
+            "Authorization": f"Bearer {data.get('access_token')}",
+            "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a",
+        },
+    )
 
     wrong_refresh = (
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDE5ODQ4MDIsInN1YiI6ImNjZjAxNjZhLTRmZDgtMTFlYS1hM2Q3LTVjYWE"
         "4MTdlZjA5YyIsInR5cGUiOiJyZWZyZXNoIn0.tLbSwb2SV2I4dMkVH571tbh8ZY-n2MeWpPDTM3cpZc4"
     )
 
-    response = client.post("/api/v1/auth/refresh", json={"refresh_token": wrong_refresh})
+    response = client.post(
+        "/api/auth/v1/auth/refresh",
+        json={"refresh_token": wrong_refresh},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh})
+    response = client.post(
+        "/api/auth/v1/auth/refresh",
+        json={"refresh_token": refresh},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -130,22 +164,40 @@ async def test_logout_all():
     """Выйти на всех устройствах."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     refresh = data.get("refresh_token")
 
-    response = client.delete("/api/v1/auth/logout/all", headers={"Authorization": f"Bearer {data.get('access_token')}"})
+    response = client.delete(
+        "/api/auth/v1/auth/logout/all",
+        headers={
+            "Authorization": f"Bearer {data.get('access_token')}",
+            "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a",
+        },
+    )
 
     wrong_refresh = (
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDE5ODQ4MDIsInN1YiI6ImNjZjAxNjZhLTRmZDgtMTFlYS1hM2Q3LTVjYWE"
         "4MTdlZjA5YyIsInR5cGUiOiJyZWZyZXNoIn0.tLbSwb2SV2I4dMkVH571tbh8ZY-n2MeWpPDTM3cpZc4"
     )
 
-    response = client.post("/api/v1/auth/refresh", json={"refresh_token": wrong_refresh})
+    response = client.post(
+        "/api/auth/v1/auth/refresh",
+        json={"refresh_token": wrong_refresh},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh})
+    response = client.post(
+        "/api/auth/v1/auth/refresh",
+        json={"refresh_token": refresh},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.FORBIDDEN
