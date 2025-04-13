@@ -43,8 +43,6 @@ async def test_signup(payload_data, expected_answer):
     response = client.post(
         "/api/auth/v1/auth/signup", json=payload_data, headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"}
     )
-    print("response.text")
-    print(response.text)
     data = response.json()
 
     assert response.status_code == expected_answer.get("status")
