@@ -20,7 +20,7 @@ COPY --from=builderstage /home/user/.local /home/user/.local
 WORKDIR $HOME/app
 COPY --chown=user . $HOME/app
 RUN chown -R user:user $HOME/app
-RUN chmod -R 755 $HOME/app
+RUN chmod -R 777 $HOME/app
 
 COPY . .
 
