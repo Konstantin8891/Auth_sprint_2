@@ -3,7 +3,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -16,6 +16,22 @@ association_table = Table(
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
 )
+
+
+def create_partition(target, connection, **kw):
+    """Партицирование историй входа."""
+    connection.execute(
+        text(
+            """CREATE TABLE login_history_y2024 PARTITION OF measurement FOR VALUES TO ('2025-01-01') PARTITION BY """
+            """RANGE (created_at)"""
+        )
+    )
+    connection.execute(
+        text(
+            """CREATE TABLE login_history_y2025 PARTITION OF measurement FOR VALUES FROM ('2025-01-01') PARTITION BY """
+            """RANGE (created_at)"""
+        )
+    )
 
 
 class User(Base):
@@ -95,6 +111,10 @@ class LoginHistory(Base):
     """История входов пользователя."""
 
     __tablename__ = "login_history"
+    __table_args__ = (
+        UniqueConstraint("id", "created_at"),
+        {"postgresql_partition_by": "RANGE (created_at)", "listeners": [("after_create", create_partition)]},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
