@@ -56,7 +56,7 @@ fastapi-pagination==0.12.34
     # via auth-sprint-1 (pyproject.toml)
 faststream==0.5.37
     # via auth-sprint-1 (pyproject.toml)
-googleapis-common-protos==1.59.1
+googleapis-common-protos==1.56.1
     # via opentelemetry-exporter-jaeger-proto-grpc
 greenlet==3.1.1
     # via sqlalchemy
@@ -152,7 +152,7 @@ pluggy==1.5.0
     # via pytest
 propcache==0.3.0
     # via yarl
-protobuf==4.25.6
+protobuf==5.29.4
     # via googleapis-common-protos
 psycopg==3.2.5
     # via auth-sprint-1 (pyproject.toml)

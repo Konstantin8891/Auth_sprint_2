@@ -78,16 +78,28 @@ async def test_create_role(payload_data, expected_answer):
     """Создание роли."""
     client = TestClient(app)
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.post("/api/v1/roles", json=payload_data)
+    response = client.post(
+        "/api/auth/v1/roles",
+        json=payload_data,
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/roles", json=payload_data, headers={"Authorization": f"Bearer {access}"})
+    response = client.post(
+        "/api/auth/v1/roles",
+        json=payload_data,
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     assert response.status_code == expected_answer.get("status")
@@ -101,16 +113,23 @@ async def test_get_roles():
     """Получение ролей."""
     client = TestClient(app)
 
-    response = client.get("/api/v1/roles")
+    response = client.get("/api/auth/v1/roles", headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"})
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.get("/api/v1/roles", headers={"Authorization": f"Bearer {access}"})
+    response = client.get(
+        "/api/auth/v1/roles",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.OK
 
@@ -130,16 +149,28 @@ async def test_check_role(query_data, expected_answer):
     """Проверка наличия роли у пользователя."""
     client = TestClient(app)
 
-    response = client.get("/api/v1/roles/user", params=query_data)
+    response = client.get(
+        "/api/auth/v1/roles/user",
+        params=query_data,
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.get("/api/v1/roles/user", headers={"Authorization": f"Bearer {access}"}, params=query_data)
+    response = client.get(
+        "/api/auth/v1/roles/user",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+        params=query_data,
+    )
 
     assert response.status_code == expected_answer.get("status")
 
@@ -166,16 +197,28 @@ async def test_patch_user_role(payload_data, expected_answer):
     """Редактирование ролей пользователя."""
     client = TestClient(app)
 
-    response = client.patch("/api/v1/roles/user", json=payload_data)
+    response = client.patch(
+        "/api/auth/v1/roles/user",
+        json=payload_data,
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.patch("/api/v1/roles/user", headers={"Authorization": f"Bearer {access}"}, json=payload_data)
+    response = client.patch(
+        "/api/auth/v1/roles/user",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+        json=payload_data,
+    )
 
     assert response.status_code == expected_answer.get("status")
 
@@ -201,16 +244,28 @@ async def test_check_permission(query_data, expected_answer):
     """Получение пермишена."""
     client = TestClient(app)
 
-    response = client.get("/api/v1/roles/permissions", params=query_data)
+    response = client.get(
+        "/api/auth/v1/roles/permissions",
+        params=query_data,
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.get("/api/v1/roles/permissions", headers={"Authorization": f"Bearer {access}"}, params=query_data)
+    response = client.get(
+        "/api/auth/v1/roles/permissions",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+        params=query_data,
+    )
 
     data = response.json()
 
@@ -234,16 +289,25 @@ async def test_get_role(role_id, expected_answer):
     """Получение роли."""
     client = TestClient(app)
 
-    response = client.get(f"/api/v1/roles/{role_id}")
+    response = client.get(
+        f"/api/auth/v1/roles/{role_id}", headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"}
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.get(f"/api/v1/roles/{role_id}", headers={"Authorization": f"Bearer {access}"})
+    response = client.get(
+        f"/api/auth/v1/roles/{role_id}",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     data = response.json()
 
@@ -389,17 +453,25 @@ async def test_patch_role(role_id, payload_data, expected_answer):
     """Редактирвоание роли."""
     client = TestClient(app)
 
-    response = client.get(f"/api/v1/roles/{role_id}")
+    response = client.get(
+        f"/api/auth/v1/roles/{role_id}", headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"}
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
     response = client.patch(
-        f"/api/v1/roles/{role_id}", headers={"Authorization": f"Bearer {access}"}, json=payload_data
+        f"/api/auth/v1/roles/{role_id}",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+        json=payload_data,
     )
 
     data = response.json()
@@ -421,15 +493,24 @@ async def test_delete_role(role_id, expected_answer):
     """Удаление роли."""
     client = TestClient(app)
 
-    response = client.get(f"/api/v1/roles/{role_id}")
+    response = client.get(
+        f"/api/auth/v1/roles/{role_id}", headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"}
+    )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
-    response = client.post("/api/v1/auth/login", json={"login": "login1", "password": "password"})
+    response = client.post(
+        "/api/auth/v1/auth/login",
+        json={"login": "login1", "password": "password"},
+        headers={"X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
     data = response.json()
 
     access = data.get("access_token")
 
-    response = client.delete(f"/api/v1/roles/{role_id}", headers={"Authorization": f"Bearer {access}"})
+    response = client.delete(
+        f"/api/auth/v1/roles/{role_id}",
+        headers={"Authorization": f"Bearer {access}", "X-Request-Id": "0x62ba858d7719d51d6a3255394cdd8b9a"},
+    )
 
     assert response.status_code == expected_answer.get("status")

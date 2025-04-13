@@ -34,36 +34,6 @@ dictConfig(LOGGING)
 
 logger = logging.getLogger(settings.project_name)
 
-#
-# def configure_tracer() -> None:
-#     trace.set_tracer_provider(TracerProvider())
-#     trace.get_tracer_provider().add_span_processor(
-#         BatchSpanProcessor(
-#             JaegerExporter(
-#                 # agent_host_name='jaeger',
-#                 agent_host_name='localhost',
-#                 agent_port=6831,
-#             )
-#         )
-#     )
-#     # Чтобы видеть трейсы в консоли
-#     trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
-#     # tracer = TracerProvider()
-#     # trace.set_tracer_provider(tracer)
-#     #
-#     # tracer.add_span_processor(
-#     #     BatchSpanProcessor(OTLPSpanExporter(endpoint="http://jaeger-collector:4318/v1/traces"))
-#     # )
-#     #
-#     # # override logger format which with trace id and span id
-#     # if log_correlation:
-#     #     LoggingInstrumentor().instrument(set_logging_format=True)
-#     #
-#     # FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
-#
-#
-# configure_tracer()
-
 
 def configure_tracer() -> None:
     """Конфигурирование трассировщика."""
@@ -85,10 +55,11 @@ configure_tracer()
 
 app = FastAPI(
     title=settings.project_name,
-    docs_url="/api/openapi",
-    openapi_url="/api/openapi.json",
+    docs_url="/api/auth/openapi",
+    openapi_url="/api/auth/openapi.json",
     default_response_class=ORJSONResponse,
 )
+
 FastAPIInstrumentor.instrument_app(app)
 
 
@@ -100,17 +71,12 @@ async def before_request(request: Request, call_next):
     if not request_id:
         return ORJSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": "X-Request-Id is required"})
     tracer = trace.get_tracer(__name__)
-    # with tracer.start_span('TestSpan') as span:
-    # span.log_kv({'event': 'test message', 'life': 42})
-    #
-    # with tracer.start_span('ChildSpan', child_of=span) as child_span:
-    #     child_span.log_kv({'event': 'down below'})
-    span = tracer.start_span()
+    span = tracer.start_span("auth")
     span.set_attribute("http.request_id", request_id)
     span.end()
     return response
 
 
 app.include_router(rabbit_master_router, prefix="/amqp")
-app.include_router(router, prefix="/api")
+app.include_router(router, prefix="/api/auth")
 add_pagination(app)
