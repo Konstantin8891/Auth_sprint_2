@@ -22,14 +22,14 @@ def create_partition(target, connection, **kw):
     """Партицирование историй входа."""
     connection.execute(
         text(
-            """CREATE TABLE login_history_y2024 PARTITION OF measurement FOR VALUES TO ('2025-01-01') PARTITION BY """
-            """RANGE (created_at)"""
+            "CREATE TABLE login_history_y2024 PARTITION OF login_history FOR VALUES FROM ('2024-01-01 00:00:00') "
+            "TO ('2025-01-01 00:00:00') PARTITION BY RANGE (created_at)"
         )
     )
     connection.execute(
         text(
-            """CREATE TABLE login_history_y2025 PARTITION OF measurement FOR VALUES FROM ('2025-01-01') PARTITION BY """
-            """RANGE (created_at)"""
+            "CREATE TABLE login_history_y2025 PARTITION OF login_history FOR VALUES FROM ('2025-01-01 00:00:00') "
+            "TO ('2026-01-01 00:00:00') PARTITION BY RANGE (created_at)"
         )
     )
 
@@ -116,10 +116,10 @@ class LoginHistory(Base):
         {"postgresql_partition_by": "RANGE (created_at)", "listeners": [("after_create", create_partition)]},
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     user_agent = Column(String(250), nullable=True)
     host = Column(String(250), nullable=True)
-    created_at = Column(DateTime, default=datetime.now(UTC))
+    created_at = Column(DateTime, default=datetime.now(UTC), index=True, primary_key=True)
 
     user = relationship("User", back_populates="login_history", cascade="all, delete", uselist=False)

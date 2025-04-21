@@ -97,10 +97,6 @@ class CRUDSQLAlchemy:
                     where_conditions.append(key.in_(value))
             query = query.where(or_(*where_conditions))
         query = query.where(field_name == field_value)  # noqa
-        try:
-            query = query.group_by(self.model.id)
-        except Exception:
-            pass
         result = await db.execute(query)
         if outerjoins:
             return result.unique().scalars().first()

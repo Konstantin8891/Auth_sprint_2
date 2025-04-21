@@ -1,8 +1,8 @@
 """Add admin role
 
-Revision ID: e95368eebabb
-Revises: 369a4e567e9d
-Create Date: 2025-03-07 21:06:16.212588
+Revision ID: 6c701fd5f452
+Revises: 4f01570df829
+Create Date: 2025-04-13 18:59:51.376472
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "e95368eebabb"
-down_revision: Union[str, None] = "369a4e567e9d"
+revision: str = "6c701fd5f452"
+down_revision: Union[str, None] = "4f01570df829"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

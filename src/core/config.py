@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     rabbitmq_url: str
     request_limit_per_minute: int
     exp_rate_limiter: int
+    enable_tracer: bool
 
     model_config = SettingsConfigDict(
         env_file=(".env"),

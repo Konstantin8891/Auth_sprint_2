@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     rabbitmq_url: str
     algorithm: str
     secret_key: str
+    enable_tracer: bool
 
     model_config = SettingsConfigDict(
         env_file=(".env",),
