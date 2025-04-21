@@ -50,3 +50,7 @@ uv pip install -r pyproject.toml
 Команда для экспорта зависимостей из uv в requirements.txt
 
 uv pip compile pyproject.toml --quiet --output-file src/requirements.txt
+
+## Адрес репозитория
+
+https://github.com/Konstantin8891/Auth_sprint_2

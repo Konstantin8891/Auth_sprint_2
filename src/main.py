@@ -51,7 +51,8 @@ def configure_tracer() -> None:
     trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
 
 
-configure_tracer()
+if settings.enable_tracer:
+    configure_tracer()
 
 
 app = FastAPI(
@@ -61,7 +62,8 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
 )
 
-FastAPIInstrumentor.instrument_app(app)
+if settings.enable_tracer:
+    FastAPIInstrumentor.instrument_app(app)
 
 
 @app.middleware("http")

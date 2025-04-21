@@ -2,23 +2,35 @@
 import logging
 
 import pytest_asyncio
+import sqlalchemy
 from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+import alembic
 from alembic.config import Config
 from core.config import settings
 from core.config import settings as mocked_settings
 from crud.roles import DBRole
 from crud.users import DBUser
-from db.postgres import Base, get_db
+from db.postgres import get_db
 from db.redis import get_redis
 from main import app
-from models.entity import User
+from models.entity import Role, User
 
 logger = logging.getLogger(__name__)
 
+engine = sqlalchemy.create_engine(
+    f"postgresql+psycopg://{settings.postgres_user}:{settings.postgres_password}@{settings.postgres_host}/"
+    f"{settings.postgres_db}",
+    future=True,
+)
+with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as connection:
+    connection.execute(text("DROP DATABASE test_db;"))
+    connection.commit()
+    connection.execute(text("CREATE DATABASE test_db;"))
+    connection.commit()
 dsn = (
     f"postgresql+psycopg://{settings.postgres_user}:{settings.postgres_password}@{settings.postgres_host}:5432/"
     "test_db"
@@ -71,11 +83,7 @@ async def apply_migrations(mocked):
             "test_db"
         ),
     )
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
-
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    alembic.command.upgrade(revision="heads", config=config)
 
     async with async_session() as db:
         yield db
@@ -83,7 +91,7 @@ async def apply_migrations(mocked):
 
     await engine.dispose()
 
-    r = Redis(host=settings.redis_host, port=settings.redis_port, db=1)
+    r = Redis(host=settings.redis_host, port=settings.redis_port, db=2)
     await r.flushall()
 
 
@@ -101,7 +109,7 @@ async def data(session_mocker, db_fixture, apply_migrations):
             },
         )
 
-        role = await DBRole.create(db=db, obj_in={"name": "admin"})
+        role = await DBRole.get_by_field_name(db=db, _select=Role, field_name=Role.name, field_value="admin")
         await DBRole.create(db=db, obj_in={"name": "Role1"})
 
         user = await DBUser.get_by_field_name(

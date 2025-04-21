@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     yandex_client_id: str
     yandex_client_secret: str
     rabbitmq_url: str
+    enable_tracer: bool
 
     model_config = SettingsConfigDict(
         env_file=(".env"),

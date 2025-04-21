@@ -135,7 +135,7 @@ async def test_get_roles():
 
     data = response.json()
 
-    assert len(data) == 4
+    assert len(data) == 5
 
 
 @pytest.mark.parametrize(
