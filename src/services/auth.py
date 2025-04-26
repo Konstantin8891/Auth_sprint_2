@@ -3,7 +3,7 @@ import logging
 import operator
 from functools import lru_cache
 from http import HTTPStatus
-from typing import List
+from typing import Dict, List, Optional
 
 import httpx
 from fastapi import Depends, HTTPException, Request
@@ -14,13 +14,14 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from core.config import settings
 from crud.login_history import DBLoginHistory
 from crud.roles import DBRole
+from crud.social import DBSocial
 from crud.users import DBUser
 from db.postgres import get_db
 from db.redis import get_redis
-from models.entity import LoginHistory, Role, User
+from models.entity import LoginHistory, Role, SocialNetwork, User
 from schemas.entity import RefreshSchema, TokenSchema, UserLoginSchema
-from schemas.social import SocialAuthorizationLink
-from services.base import AbstractService
+from schemas.social import SocialAuthorizationLink, SocialEnum
+from services.base import AbstractService, SocialAbstractService
 from utils.auth import create_access_token, create_refresh_token
 
 logger = logging.getLogger(__name__)
@@ -186,7 +187,7 @@ def get_auth_service(db: AsyncSession = Depends(get_db), cache: Redis = Depends(
     return AuthService(db, cache)
 
 
-class SocialService(AbstractService):
+class SocialService(SocialAbstractService):
     """Сервис авторизации через сторонние приложения."""
 
     def __init__(self, db: AsyncSession, cache: Redis) -> None:
@@ -195,51 +196,45 @@ class SocialService(AbstractService):
         super().__init__(db, cache)
 
     @staticmethod
-    async def get_link() -> SocialAuthorizationLink:
+    async def get_link(provider: SocialEnum) -> SocialAuthorizationLink:
         """Линк авторизации в яндексе."""
-        return SocialAuthorizationLink(
-            url=(settings.yandex_oauth_authorize + "?response_type=code&client_id=" + settings.yandex_client_id)
-        )
-
-    async def get_tokens(self, code: str):
-        """Возвращает токены по коду яндекса."""
-        params = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "client_id": settings.yandex_client_id,
-            "client_secret": settings.yandex_client_secret,
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url=settings.yandex_oauth_token,
-                data=params,
-                params=params,
-                headers={"content-type": "application/x-www-form-urlencoded"},
+        if provider == SocialEnum.yandex.name:
+            return SocialAuthorizationLink(
+                url=(settings.yandex_oauth_authorize + "?response_type=code&client_id=" + settings.yandex_client_id)
             )
-        access_token = response.json().get("access_token")
+        return None
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url=settings.yandex_oauth_profile,
-                params={"format": "json"},
-                headers={"Authorization": f"OAuth {access_token}"},
-            )
+    async def get_tokens(self, code: str, provider: SocialEnum) -> Optional[Dict]:
+        """Возвращает токены по коду."""
+        if provider == SocialEnum.yandex.name:
+            params = {
+                "grant_type": "authorization_code",
+                "code": code,
+                "client_id": settings.yandex_client_id,
+                "client_secret": settings.yandex_client_secret,
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url=settings.yandex_oauth_token,
+                    data=params,
+                    params=params,
+                    headers={"content-type": "application/x-www-form-urlencoded"},
+                )
+            access_token = response.json().get("access_token")
 
-        response = response.json()
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    url=settings.yandex_oauth_profile,
+                    params={"format": "json"},
+                    headers={"Authorization": f"OAuth {access_token}"},
+                )
 
-        login = response.get("login")
-        first_name = response.get("first_name")
-        last_name = response.get("last_name")
+            response = response.json()
 
-        user = await DBUser.get_by_field_name(
-            db=self.db, _select=User, field_name=User.login, field_value=login, selection_load_options=[(User.roles,)]
-        )
-        if user:
-            logger.info("User logged in from yandex")
-            logger.info(user)
-            role_ids = [str(el.id) for el in user.roles]
-        else:
-            await DBUser.create(db=self.db, obj_in={"login": login, "first_name": first_name, "last_name": last_name})
+            login = response.get("login")
+            first_name = response.get("first_name")
+            last_name = response.get("last_name")
+
             user = await DBUser.get_by_field_name(
                 db=self.db,
                 _select=User,
@@ -247,32 +242,54 @@ class SocialService(AbstractService):
                 field_value=login,
                 selection_load_options=[(User.roles,)],
             )
-            role = await DBRole.get_by_field_name(db=self.db, _select=Role, field_name=Role.name, field_value="user")
-            await DBUser.add_role(db=self.db, role=role, user=user)
-            logger.info("User created from yandex")
-            logger.info(user)
-            role_ids = [role.id]
-        login_history = await DBLoginHistory.create(
-            db=self.db,
-            obj_in={
-                "user_id": user.id,
-                "user_agent": "yandex",
-                "host": "https://ya.ru",
-            },
-        )
-        nested_key = await self.auth_service.get_nested_key(login_history)
-        access_token = create_access_token(subject=user.id, role_ids=role_ids)
-        refresh_token = create_refresh_token(subject=user.id)
-        await self.auth_service.hset_to_cache(
-            user_id=str(user.id),
-            nested_key=nested_key,
-            refresh_token=refresh_token,
-            nx=True,
-            xx=False,
-            gt=False,
-            lt=False,
-        )
-        return {"access_token": access_token, "refresh_token": refresh_token}
+            if user:
+                logger.info("User logged in from yandex")
+                logger.info(user)
+                role_ids = [str(el.id) for el in user.roles]
+            else:
+                await DBUser.create(
+                    db=self.db, obj_in={"login": login, "first_name": first_name, "last_name": last_name}
+                )
+                user = await DBUser.get_by_field_name(
+                    db=self.db,
+                    _select=User,
+                    field_name=User.login,
+                    field_value=login,
+                    selection_load_options=[(User.roles,), (User.social,)],
+                )
+                role = await DBRole.get_by_field_name(
+                    db=self.db, _select=Role, field_name=Role.name, field_value="user"
+                )
+                await DBUser.add_role(db=self.db, role=role, user=user)
+                social = await DBSocial.get_by_field_name(
+                    db=self.db, _select=SocialNetwork, field_name=SocialNetwork.name, field_value=SocialEnum.yandex.name
+                )
+                await DBUser.add_social(social=social, db=self.db, user=user)
+                logger.info("User created from yandex")
+                logger.info(user)
+                role_ids = [role.id]
+            login_history = await DBLoginHistory.create(
+                db=self.db,
+                obj_in={
+                    "user_id": user.id,
+                    "user_agent": "yandex",
+                    "host": "https://ya.ru",
+                },
+            )
+            nested_key = await self.auth_service.get_nested_key(login_history)
+            access_token = create_access_token(subject=user.id, role_ids=role_ids)
+            refresh_token = create_refresh_token(subject=user.id)
+            await self.auth_service.hset_to_cache(
+                user_id=str(user.id),
+                nested_key=nested_key,
+                refresh_token=refresh_token,
+                nx=True,
+                xx=False,
+                gt=False,
+                lt=False,
+            )
+            return {"access_token": access_token, "refresh_token": refresh_token}
+        return None
 
 
 @lru_cache()

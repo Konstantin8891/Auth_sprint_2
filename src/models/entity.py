@@ -17,6 +17,13 @@ association_table = Table(
     Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
 )
 
+social_users_table = Table(
+    "usersocial",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("social_id", ForeignKey("social_network.id", ondelete="CASCADE"), primary_key=True),
+)
+
 
 def create_partition(target, connection, **kw):
     """Партицирование историй входа."""
@@ -48,6 +55,7 @@ class User(Base):
 
     roles = relationship("Role", back_populates="users", secondary=association_table, passive_deletes=True)
     login_history = relationship("LoginHistory", cascade="all, delete", back_populates="user")
+    social = relationship("SocialNetwork", cascade="all, delete", back_populates="users", secondary=social_users_table)
 
     def __init__(self, login: str, first_name: str, last_name: str, password: Optional[str] = None) -> None:
         """Инит."""
@@ -123,3 +131,16 @@ class LoginHistory(Base):
     created_at = Column(DateTime, default=datetime.now(UTC), index=True, primary_key=True)
 
     user = relationship("User", back_populates="login_history", cascade="all, delete", uselist=False)
+
+
+class SocialNetwork(Base):
+    """Социальная сеть."""
+
+    __tablename__ = "social_network"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    name = Column(String(50), nullable=False)
+
+    users = relationship(
+        "User", back_populates="social", cascade="all, delete", uselist=False, secondary=social_users_table
+    )

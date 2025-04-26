@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 
 from models.entity import User
 from schemas.entity import RefreshSchema, TokenSchema, UserCreate, UserInDB, UserLoginSchema
-from schemas.social import SocialAuthorizationLink
+from schemas.social import SocialAuthorizationLink, SocialEnum
 from services.auth import AuthService, SocialService, get_auth_service, get_social_service
 from services.users import UserService, get_user_service
 from utils.auth import get_current_user
@@ -56,12 +56,16 @@ async def logout_all(
 
 
 @router.get("/social", summary="Return authorization link", response_model=SocialAuthorizationLink)
-async def get_social_link(social_service: SocialService = Depends(get_social_service)) -> SocialAuthorizationLink:
-    """Получение ссылки аваторизации в Яндексе."""
-    return await social_service.get_link()
+async def get_social_link(
+    provider: SocialEnum, social_service: SocialService = Depends(get_social_service)
+) -> SocialAuthorizationLink:
+    """Получение ссылки аваторизации через соцсети."""
+    return await social_service.get_link(provider=provider)
 
 
-@router.get("/social/yandex_auth", summary="Get token by yandex login", response_model=None)
-async def get_tokens(code: str, social_service: SocialService = Depends(get_social_service)) -> None:
+@router.get("/social/auth", summary="Get token by yandex login", response_model=TokenSchema)
+async def get_tokens(
+    provider: SocialEnum, code: str, social_service: SocialService = Depends(get_social_service)
+) -> TokenSchema:
     """Получение токенов авторизации на беке по коду."""
-    return await social_service.get_tokens(code=code)
+    return await social_service.get_tokens(code=code, provider=provider)

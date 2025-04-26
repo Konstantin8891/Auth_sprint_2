@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     yandex_client_secret: str
     rabbitmq_url: str
     enable_tracer: bool
+    jaeger_host: str
+    jaeger_port: int
 
     model_config = SettingsConfigDict(
         env_file=(".env"),
