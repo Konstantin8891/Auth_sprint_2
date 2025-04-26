@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     algorithm: str
     secret_key: str
     enable_tracer: bool
+    jaeger_host: str
+    jaeger_port: int
 
     model_config = SettingsConfigDict(
         env_file=(".env",),

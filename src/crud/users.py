@@ -7,7 +7,7 @@ from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from crud.base_crud import CRUDSQLAlchemy
-from models.entity import Role, User
+from models.entity import Role, SocialNetwork, User
 
 
 class CRUDUser(CRUDSQLAlchemy):
@@ -35,6 +35,12 @@ class CRUDUser(CRUDSQLAlchemy):
     async def remove_role(db: AsyncSession, role: Role, user: User):
         """Убрать роль."""
         user.roles.remove(role)
+        await db.commit()
+
+    @staticmethod
+    async def add_social(db: AsyncSession, social: SocialNetwork, user: User):
+        """Назначить роль."""
+        user.social.append(social)
         await db.commit()
 
 
